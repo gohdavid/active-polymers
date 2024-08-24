@@ -82,21 +82,23 @@ def f_conf_spring(x0, k_over_xi, Aex, rx, ry, rz):
     return f
 
 @njit
-def f_elas_loops(x0, k_over_xi, relk, K, lamb=0):
-    """Compute spring forces on single, linear rouse polymer with additional
-    springs located at points in K matrix."""
+def f_elas_flow(x0, k, xi, R, l, B, s1, s2, lamb):
+    """Compute spring forces on single, linear rouse polymer with a condensate-mediated
+    force acting on the enhancer (s1) pointing towards the promoter (s2)."""
     N, _ = x0.shape
     f = np.zeros(x0.shape)
     for j in range(1, N):
         f[j, :] += -lamb * x0[j, :]
         for n in range(3):
-            f[j, n] += -k_over_xi*(x0[j, n] - x0[j-1, n])
-            f[j-1, n] += -k_over_xi*(x0[j-1, n] - x0[j, n])
-    # add additional springs at specific locations
-    for k in range(len(K)):
-        s1 = K[k][0]
-        s2 = K[k][1]
-        for n in range(3):
-            f[s1, n] += -relk * k_over_xi*(x0[s1, n] - x0[s2, n])
-            f[s2, n] += -relk * k_over_xi*(x0[s2, n] - x0[s1, n])
+            f[j, n] += -k/xi[j]*(x0[j, n] - x0[j-1, n])
+            f[j-1, n] += -k/xi[j]*(x0[j-1, n] - x0[j, n])
+    # Enhancer-promoter (s1-s2) condensate force
+    delta = x0[s1,:] - x0[s2,:]  # Displacement vector pointing from s2 to s1
+    d = np.linalg.norm(delta)  # Magnitude of displacement
+    # Velocity in the axis of flow
+    v = -B*np.divide((np.exp(-(R+d)/l)*(l+R)*(l+d)-np.exp(-np.abs(R-d)/l)*(l**2-R*d+l*np.abs(R-d))),d**2)
+    v_vector = np.divide(v * delta, d) # Dimensionful velocity vector in cartesian coordinates
+    v_vector = np.nan_to_num(v_vector)  # Probably nan because d == 0
+    f[s1, :] += v_vector # Force only acts on s1 (enhancer)
+    # Here, force_vector / xi[s1] = xi[s1] * velocity_vector / xi[s1] = velocity_vector
     return f

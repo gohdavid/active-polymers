@@ -449,28 +449,21 @@ def conf_identity_core_noise_srk2(N, L, b, D, h, tmax, t_save,
     return x
 
 @njit
-def loops_with_srk1(N, L, b, D, h, tmax, K, relk=1.0, lamb=0.0,
-                    t_save=None, t_msd=None, msd_start_time=0.0, Deq=1):
+def flow_with_srk1(N, L, b, D, h, xi, tmax, R, l, B, s1, s2, lamb,
+                    t_save, t_msd, msd_start_time, Deq):
     r"""
-    Simulate a Rouse polymer with additional harmonic bonds coupling distinct regions along the
-    chain. Here, the forces are not in-lined for code clarity.
-
-    Parameters
-    ----------
-    K : (m, 2) array-like[int]
-        indicies of monomers that are connected by m additional springs to add to the Rouse chain
-    relk : float
-        Ratio of spring stiffness of additional bonds relative to polymer connectivity.
+    Simulate a Rouse polymer with a condensate-mediated force acting on the enhancer (s1) pointing
+    towards the promoter (s2) on the chain. Here, the forces are not in-lined for code clarity.
     """
     rtol = 1e-5
     # derived parameters
-    L0 = L/(N-1)  # length per bead
-    bhat = np.sqrt(L0*b)  # mean squared bond length of discrete gaussian chain
-    Nhat = L/b  # number of Kuhn lengths in chain
-    Dhat = D*N/Nhat  # diffusion coef of a discrete gaussian chain bead
-    Deq = Deq * N / Nhat
-    #set spring constant to be 3D/b^2 where D is the diffusion coefficient of the coldest bead
-    k_over_xi = 3*Deq/bhat**2
+    L0 = L/(N-1)  # Length per bead
+    bhat = np.sqrt(L0*b)  # Root mean squared bond length of discrete gaussian chain
+    Nhat = L/b  # Number of Kuhn lengths in chain
+    Dhat = D*N/Nhat  # Diffusion coefficient of each discrete gaussian chain bead (array)
+    Deq = Deq * N / Nhat  # Standard diffusion coefficient
+    # Set spring constant to be 3D/b^2 where D is the standard diffusion coefficient
+    k = 3*Deq/bhat**2
     # initial position, free draining equilibrium
     x0 = bhat/np.sqrt(3)*np.random.randn(N, 3)
     # for jit, we unroll ``x0 = np.cumsum(x0, axis=0)``
@@ -480,16 +473,13 @@ def loops_with_srk1(N, L, b, D, h, tmax, K, relk=1.0, lamb=0.0,
     msds = np.zeros((1, N+1))
     if t_msd is not None:
         print('Setting up msd calculation')
-        #at each msd save point, msds of N monomers + center of mass
+        # at each msd save point, msds of N monomers + center of mass
         msds = np.zeros((len(t_msd), N+1))
         msd_i = 0
         msd_start_ind = int(msd_start_time / h)
         if msd_start_time == 0:
             msd_start_pos = x0.copy()  # N x 3
         msd_inds = np.rint((msd_start_time + t_msd) / h)
-
-    if t_save is None:
-        t_save = np.linspace(0.0, tmax, 101)
 
     x = np.zeros(t_save.shape + x0.shape)
     save_i = 0
@@ -508,12 +498,12 @@ def loops_with_srk1(N, L, b, D, h, tmax, K, relk=1.0, lamb=0.0,
         # D = sigma^2/2 ==> sigma = np.sqrt(2*D)
         Fbrown = (np.sqrt(2*Dhat/h) * (dW - S[i]).T).T
         # estimate for slope at interval start
-        f = f_elas_loops(x0, k_over_xi, relk, K, lamb)
+        f = f_elas_flow(x0, k, xi, R, l, B, s1, s2, lamb)
         K1 = f + Fbrown
         Fbrown = (np.sqrt(2*Dhat/h) * (dW + S[i]).T).T
         # estimate for slope at interval end
         x1 = x0 + h*K1
-        f = f_elas_loops(x1, k_over_xi, relk, K, lamb)
+        f = f_elas_flow(x1, k, xi, R, l, B, s1, s2, lamb)
         K2 = f + Fbrown
         x0 = x0 + h * (K1 + K2)/2
         if t_msd is not None:
