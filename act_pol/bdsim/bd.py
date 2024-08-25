@@ -450,7 +450,7 @@ def conf_identity_core_noise_srk2(N, L, b, D, h, tmax, t_save,
 
 @njit
 def flow_with_srk1(N, L, b, D, h, xi, tmax, R, l, B, s1, s2, lamb,
-                    t_save, t_msd, msd_start_time, Deq):
+                    t_save, t_msd, msd_start_time, Deq, xieq):
     r"""
     Simulate a Rouse polymer with a condensate-mediated force acting on the enhancer (s1) pointing
     towards the promoter (s2) on the chain. Here, the forces are not in-lined for code clarity.
@@ -461,9 +461,10 @@ def flow_with_srk1(N, L, b, D, h, xi, tmax, R, l, B, s1, s2, lamb,
     bhat = np.sqrt(L0*b)  # Root mean squared bond length of discrete gaussian chain
     Nhat = L/b  # Number of Kuhn lengths in chain
     Dhat = D*N/Nhat  # Diffusion coefficient of each discrete gaussian chain bead (array)
-    Deq = Deq * N / Nhat  # Standard diffusion coefficient
-    # Set spring constant to be 3D/b^2 where D is the standard diffusion coefficient
-    k = 3*Deq/bhat**2
+    Deq = Deq * N / Nhat  # Diffusion coefficient at equilibrium
+    # Set spring constant to be 3Deq xieq/b^2 where Deq and xieq are the diffusivity and friction
+    # coefficient at equilibrium
+    k = 3*Deq/bhat**2*xieq
     # initial position, free draining equilibrium
     x0 = bhat/np.sqrt(3)*np.random.randn(N, 3)
     # for jit, we unroll ``x0 = np.cumsum(x0, axis=0)``

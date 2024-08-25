@@ -75,7 +75,8 @@ def main():
     s1 = round(mid - Lep/2)  # Enhancer position
     s2 = round(mid + Lep/2)  # Promoter position
     lamb = 0
-    Deq = 1
+    Deq = 1  # Equilibrium diffusivity
+    xieq = 1  # Equilibrium friction coefficient
 
     # Rouse time step and time
     h = recommended_dt(N=N,L=L,b=b,D=mode(D)[0])  # Maximum dt
@@ -83,7 +84,7 @@ def main():
     
     # Simulation details
     t_save = np.linspace(tmax/2,tmax,12)[1:-1]  # Save 10 points between Rouse times
-    t_msd = np.logspace(-2, 5, 100)  # Time to save MSD
+    t_msd = np.linspace(0,tmax,101)  # Time to save MSD
     msd_start_time = 0.0  # Time to start saving MSD
     
     # Implement free parameters
@@ -92,7 +93,7 @@ def main():
 
     # Name of simulation file
     job_id = sys.argv[1]  # Get first script input
-    filedir = Path(f"./simulations/B{B:.3g}_F{enhancer_friction:.3g}_D{enhancer_diffusivity:.3g}/")  # Simulation directory
+    filedir = Path(f"./simulations/B{B:.3g}_F{enhancer_friction:.3g}_D{enhancer_diffusivity:.3g}_L{Lep_kb:.3g}/")  # Simulation directory
     file = filedir/f'tape_{job_id}.csv'  # File
     msdfile = filedir/f'msds_{job_id}.csv'  # File
 
@@ -107,7 +108,7 @@ def main():
     
     # Run simulation
     X, msd = flow_with_srk1(N, L, b, D, h, xi, tmax, R, l, B, s1, s2, lamb, t_save, t_msd,
-                          msd_start_time, Deq)
+                          msd_start_time, Deq, xieq)
     
     # Save to CSV file
     dfs = []
