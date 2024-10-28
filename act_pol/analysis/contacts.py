@@ -23,9 +23,6 @@ from pathlib import Path
 from scipy.spatial.distance import pdist, squareform
 sns.set()
 
-import deepti_utils
-from deepti_utils.plotting import *
-
 params = {'axes.edgecolor': 'black',
                   'axes.facecolor':'white',
                   'axes.grid': False,
