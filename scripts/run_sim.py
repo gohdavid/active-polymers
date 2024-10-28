@@ -7,7 +7,7 @@ Rouse polymers.
 """
 import numpy as np
 from act_pol.bdsim.bd import *
-from act_pol.bdsim.extrusion import *
+# from act_pol.bdsim.extrusion import *
 import pandas as pd
 from pathlib import Path
 from multiprocessing import Pool

@@ -82,7 +82,7 @@ def f_conf_spring(x0, k_over_xi, Aex, rx, ry, rz):
     return f
 
 @njit
-def f_elas_flow(x0, k, xi, R, l, B, s1, s2, lamb):
+def f_elas_flow(x0, k, xi, R, l, B, s1, s2, lamb, reciprocal=False):
     """Compute spring forces on single, linear rouse polymer with a condensate-mediated
     force acting on the enhancer (s1) pointing towards the promoter (s2)."""
     N, _ = x0.shape
@@ -97,8 +97,10 @@ def f_elas_flow(x0, k, xi, R, l, B, s1, s2, lamb):
     d = np.linalg.norm(delta)  # Magnitude of displacement
     # Velocity in the axis of flow
     v = -B*np.divide((np.exp(-(R+d)/l)*(l+R)*(l+d)-np.exp(-np.abs(R-d)/l)*(l**2-R*d+l*np.abs(R-d))),d**2)
-    v_vector = np.divide(v * delta, d) # Dimensionful velocity vector in cartesian coordinates
+    v_vector = np.divide(v * delta, d)  # Dimensionful velocity vector in cartesian coordinates
     v_vector = np.nan_to_num(v_vector)  # Probably nan because d == 0
-    f[s1, :] += v_vector # Force only acts on s1 (enhancer)
+    f[s1, :] += v_vector  # Force only acts on s1 (enhancer)
+    if reciprocal:
+        f[s2, :] -= v_vector
     # Here, force_vector / xi[s1] = xi[s1] * velocity_vector / xi[s1] = velocity_vector
     return f

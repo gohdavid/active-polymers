@@ -449,8 +449,8 @@ def conf_identity_core_noise_srk2(N, L, b, D, h, tmax, t_save,
     return x
 
 @njit
-def flow_with_srk1(N, L, b, D, h, xi, tmax, R, l, B, s1, s2, lamb,
-                    t_save, t_msd, msd_start_time, Deq, xieq):
+def flow_with_srk1(N, L, b, A, h, xi, tmax, R, l, B, s1, s2, lamb,
+                    t_save, t_msd, msd_start_time, Aeq, xieq, reciprocal=False):
     r"""
     Simulate a Rouse polymer with a condensate-mediated force acting on the enhancer (s1) pointing
     towards the promoter (s2) on the chain. Here, the forces are not in-lined for code clarity.
@@ -460,11 +460,10 @@ def flow_with_srk1(N, L, b, D, h, xi, tmax, R, l, B, s1, s2, lamb,
     L0 = L/(N-1)  # Length per bead
     bhat = np.sqrt(L0*b)  # Root mean squared bond length of discrete gaussian chain
     Nhat = L/b  # Number of Kuhn lengths in chain
-    Dhat = D*N/Nhat  # Diffusion coefficient of each discrete gaussian chain bead (array)
-    Deq = Deq * N / Nhat  # Diffusion coefficient at equilibrium
-    # Set spring constant to be 3Deq xieq/b^2 where Deq and xieq are the diffusivity and friction
-    # coefficient at equilibrium
-    k = 3*Deq/bhat**2*xieq
+    Ahat = A*N/Nhat  # Activity of each discrete gaussian chain bead (array)
+    Aeq = Aeq * N / Nhat  # Activity at equilibrium
+    # Set spring constant to be Aeq/(2*bhat)**2 where Aeq is the activity at equilibrium
+    k = Aeq/(2*bhat**2)
     # initial position, free draining equilibrium
     x0 = bhat/np.sqrt(3)*np.random.randn(N, 3)
     # for jit, we unroll ``x0 = np.cumsum(x0, axis=0)``
@@ -494,17 +493,17 @@ def flow_with_srk1(N, L, b, D, h, xi, tmax, R, l, B, s1, s2, lamb,
     # at each step i, we use data (x,t)[i-1] to create (x,t)[i]
     # in order to make it easy to pull into a new functin later, we'll call
     # t[i-1] "t0", old x (x[i-1]) "x0", and t[i]-t[i-1] "h".
-    for i in range(1, ntimesteps):
+    for i in range(0, ntimesteps):
         dW = np.random.randn(*x0.shape)
         # D = sigma^2/2 ==> sigma = np.sqrt(2*D)
-        Fbrown = (np.sqrt(2*Dhat/h) * (dW - S[i]).T).T
+        Fbrown = (np.sqrt(Ahat/(3*xi*h)) * (dW - S[i]).T).T
         # estimate for slope at interval start
-        f = f_elas_flow(x0, k, xi, R, l, B, s1, s2, lamb)
+        f = f_elas_flow(x0, k, xi, R, l, B, s1, s2, lamb, reciprocal=reciprocal)
         K1 = f + Fbrown
-        Fbrown = (np.sqrt(2*Dhat/h) * (dW + S[i]).T).T
+        Fbrown = (np.sqrt(Ahat/(3*xi*h)) * (dW + S[i]).T).T
         # estimate for slope at interval end
         x1 = x0 + h*K1
-        f = f_elas_flow(x1, k, xi, R, l, B, s1, s2, lamb)
+        f = f_elas_flow(x1, k, xi, R, l, B, s1, s2, lamb, reciprocal=reciprocal)
         K2 = f + Fbrown
         x0 = x0 + h * (K1 + K2)/2
         if t_msd is not None:

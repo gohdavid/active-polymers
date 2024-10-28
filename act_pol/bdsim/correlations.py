@@ -10,7 +10,7 @@ via :math:`\langle \eta_i \eta_j \rangle = 2 \sqrt{D_i} \sqrt{D_j} C_{ij}`.
 
 import numpy as np
 from numba import njit
-from ..analysis.files import extract_cov
+# from ..analysis.files import extract_cov
 
 @njit
 def generate_correlations_vars(identity_mat, rhos, stds, d=3):
@@ -76,15 +76,15 @@ def covariance_from_noise(identity_mat, rhos, stds, niter=1000, **kwargs):
     avg_covariance = covariance / niter
     return avg_covariance
 
-def covariance_from_identities(simdir, **kwargs):
-    """ For a given simulation, extract the monomer identities (type 1, 0, or -1) and diffusion
-    coefficients from saved files and then reconstruct the covariance matrix of the noise."""
+# def covariance_from_identities(simdir, **kwargs):
+#     """ For a given simulation, extract the monomer identities (type 1, 0, or -1) and diffusion
+#     coefficients from saved files and then reconstruct the covariance matrix of the noise."""
 
-    D, idmat, rhos = extract_cov(simdir, **kwargs)
-    N = len(D)
-    rho = rhos[0]
-    corr = np.outer(idmat, idmat)
-    corr *= rho
-    corr[np.diag_indices(N)] = 1.0 #diagonal of correlation matrix is 1
-    cov = np.sqrt(np.outer(D, D)) * corr
-    return cov
+#     D, idmat, rhos = extract_cov(simdir, **kwargs)
+#     N = len(D)
+#     rho = rhos[0]
+#     corr = np.outer(idmat, idmat)
+#     corr *= rho
+#     corr[np.diag_indices(N)] = 1.0 #diagonal of correlation matrix is 1
+#     cov = np.sqrt(np.outer(D, D)) * corr
+#     return cov

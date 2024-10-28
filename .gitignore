@@ -1,4 +1,7 @@
 __pycache__
-simulations
+*simulations
+*simulations_new
 slurm*
 *log*
+*.pdf
+*.png

@@ -11,3 +11,4 @@ dependencies:
   - mpmath
   - matplotlib
   - seaborn
+  - pyarrow
