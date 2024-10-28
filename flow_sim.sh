@@ -3,11 +3,9 @@
 #SBATCH --time=96:00:00
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
-#SBATCH --partition=xeon-p8
-##SBATCH --partition=xeon-g6-volta
+#SBATCH --partition=xeon-g6-volta
 #SBATCH -o flow_sim.log-%A-%a
-#SBATCH --array=1-239
-##SBATCH --array=1-160
+#SBATCH --array=1-160
 
 source activate poly
 export OPENBLAS_NUM_THREADS=2

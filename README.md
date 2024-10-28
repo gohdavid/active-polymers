@@ -10,5 +10,3 @@ between all pairs of monomers, as well as contact probabilities from ensemble an
 simulation data. 
 
 A. Goychuk, D. Kannan, A. K. Chakraborty, and M. Kardar. Polymer folding through active processes recreates features of genome organization. *bioRxiv* (2022) https://doi.org/10.1101/2022.12.24.521789
-
-
